@@ -1,0 +1,184 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/searchbar.css">
+    <link rel="stylesheet" href="style/sidebar.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.27/"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+    <title>Map API Experiment</title>
+  </head>
+  <body style="width: 100%; height: 100%; margin: 0; padding: 0;">
+    <!-- top of the web page -->
+    <div class="header">
+      <button class="openbtn" onclick="toggleSidebar()">&#9776;</button>
+
+      <div class="wrapper">
+        <!-- search bar -->
+        <div class="searchBar">
+          <input id="searchQueryInput" type="text" name="searchQueryInput" placeholder="Search" value="" />
+          <!-- submit button for search query -->
+          <button id="searchQuerySubmit" type="submit" name="searchQuerySubmit">
+            <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+              <path fill="#666666" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 
+              15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,
+              20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,
+              16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,
+              3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,
+              12 14,9.5C14,7 12,5 9.5,5Z" />
+            </svg>
+          </button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="body">
+      <!-- user utilities on the left hand side (could make it hidden) -->
+      <div id="leftSideBar" class="sidebar">
+        <a href="#">Profile</a>
+        <a href="#">Favorite</a>
+        <a href="#">Feed</a>
+        <a href="#">Settings</a>
+        
+      </div>
+      <div id="content">
+        <!-- map container -->
+
+        <div id="map"></div>
+        
+      </div>
+    </div>
+
+    <script>
+
+      require([
+        "esri/config",
+        "esri/Map",
+        "esri/views/MapView",
+
+        "esri/Graphic",
+        "esri/rest/route",
+        "esri/rest/support/RouteParameters",
+        "esri/rest/support/FeatureSet"
+
+      ], function(esriConfig, Map, MapView, Graphic, route, RouteParameters, FeatureSet) {
+
+        esriConfig.apiKey = "AAPK820435f2f2c44734adb86048c24d7a461ZxGsDqRfXnapEWTXg2-4IVCqgz-ougtsHeUStNyAYnnWk8modZb_Xz2fh2dhbdV";
+
+        const map = new Map({
+          basemap: "arcgis-navigation" //Basemap layer service
+        });
+
+        const view = new MapView({
+          container: "map",
+          map: map,
+          center: [-118.24532,34.05398], //Longitude, latitude
+          zoom: 12
+        });
+
+        const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
+
+        view.on("click", function(event){
+
+          if (view.graphics.length === 0) {
+            addGraphic("origin", event.mapPoint);
+          } else if (view.graphics.length === 1) {
+            addGraphic("destination", event.mapPoint);
+
+            getRoute(); // Call the route service
+
+          } else {
+            view.graphics.removeAll();
+            addGraphic("origin",event.mapPoint);
+          }
+
+        });
+
+        function addGraphic(type, point) {
+          const graphic = new Graphic({
+            symbol: {
+              type: "simple-marker",
+              color: (type === "origin") ? "white" : "black",
+              size: "8px"
+            },
+            geometry: point
+          });
+          view.graphics.add(graphic);
+        }
+
+        function getRoute() {
+          const routeParams = new RouteParameters({
+            stops: new FeatureSet({
+              features: view.graphics.toArray()
+            }),
+
+            returnDirections: true
+
+          });
+
+          route.solve(routeUrl, routeParams)
+                  .then(function(data) {
+                    data.routeResults.forEach(function(result) {
+                      result.route.symbol = {
+                        type: "simple-line",
+                        color: [5, 150, 255],
+                        width: 3
+                      };
+                      view.graphics.add(result.route);
+                    });
+
+                    // Display directions
+                    if (data.routeResults.length > 0) {
+                      const directions = document.createElement("ol");
+                      directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+                      directions.style.marginTop = "0";
+                      directions.style.padding = "15px 15px 15px 30px";
+                      const features = data.routeResults[0].directions.features;
+
+                      // Show each direction
+                      features.forEach(function(result,i){
+                        const direction = document.createElement("li");
+                        direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+                        directions.appendChild(direction);
+                      });
+
+                      view.ui.empty("top-right");
+                      view.ui.add(directions, "top-right");
+
+                    }
+
+                  })
+
+                  .catch(function(error){
+                    console.log(error);
+                  })
+
+        }
+
+      });
+
+
+    </script>
+    
+    <script>
+
+        function toggleSidebar() {
+          var sidebar = document.getElementById("leftSideBar");
+          var content = document.getElementById("content");
+          const size = "120px"
+          if (sidebar.style.width === size) {
+            console.log(sidebar.style.width)
+            sidebar.style.width = "0px";
+            content.style.marginLeft = "0px";
+
+          } else {
+            console.log("Hello")
+            console.log(sidebar.style.width)
+            sidebar.style.width = size;
+            content.style.marginLeft = size;
+          }
+        }
+
+    </script>
+  </body>
+</html>
