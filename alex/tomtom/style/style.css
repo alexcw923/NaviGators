@@ -7,6 +7,23 @@ body {
     width: 100%;
 }
 
+.userPreferences {
+    width: 30%;
+    height: 100vh;
+    float: left;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+
+.mapContainer {
+    width: 70%;
+    height: 100vh;
+    float: left;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
 
 
 .header {
