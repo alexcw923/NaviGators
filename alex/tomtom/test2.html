@@ -1,0 +1,108 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <title>Two Text Input Fields Form</title>-->
+<!--    <style>-->
+<!--        .input-container {-->
+<!--            position: relative;-->
+<!--        }-->
+<!--        .suggestions {-->
+<!--            position: absolute;-->
+<!--            top: calc(100% + 5px);-->
+<!--            left: 0;-->
+<!--            border: 1px solid #ccc;-->
+<!--            background-color: #fff;-->
+<!--            max-height: 150px;-->
+<!--            overflow-y: auto;-->
+<!--            width: 200px;-->
+<!--        }-->
+<!--        .suggestions ul {-->
+<!--            list-style: none;-->
+<!--            padding: 0;-->
+<!--            margin: 0;-->
+<!--        }-->
+<!--        .suggestions li {-->
+<!--            padding: 5px;-->
+<!--            cursor: pointer;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--<h1>Enter Values</h1>-->
+<!--<form id="inputForm">-->
+<!--    <div class="input-container">-->
+<!--        <label for="inputValue1">Value 1:</label>-->
+<!--        <input type="text" id="inputValue1" name="inputValue1" required>-->
+<!--        <div class="suggestions" id="suggestions1"></div>-->
+<!--    </div>-->
+
+<!--    <div class="input-container">-->
+<!--        <label for="inputValue2">Value 2:</label>-->
+<!--        <input type="text" id="inputValue2" name="inputValue2" required>-->
+<!--        <div class="suggestions" id="suggestions2"></div>-->
+<!--    </div>-->
+
+<!--    <input type="submit" value="Submit">-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    // Get the input fields and their respective suggestions divs-->
+<!--    const inputFields = [document.getElementById("inputValue1"), document.getElementById("inputValue2")];-->
+<!--    const suggestionsDivs = [document.getElementById("suggestions1"), document.getElementById("suggestions2")];-->
+
+<!--    // Function to be called every time an input field is edited-->
+<!--    function handleInputChange(event) {-->
+<!--        const inputField = event.target;-->
+<!--        const index = inputFields.indexOf(inputField);-->
+<!--        if (index === -1) return;-->
+
+<!--        // Get the current value of the input field-->
+<!--        const currentValue = inputField.value;-->
+
+<!--        // Simulate the function that returns a list of results-->
+<!--        // Replace this with your actual function that fetches results from a server or elsewhere-->
+<!--        const results = simulateResults(currentValue);-->
+
+<!--        // Display the suggestions right under the corresponding input field-->
+<!--        suggestionsDivs[index].innerHTML = results.length-->
+<!--            ? `<ul>${results.map(result => `<li onclick="selectSuggestion('${result}', ${index})">${result}</li>`).join("")}</ul>`-->
+<!--            : "";-->
+<!--    }-->
+
+<!--    // Function to simulate fetching results (replace this with your actual function)-->
+<!--    function simulateResults(inputValue) {-->
+<!--        // Here, we simply return an array of strings containing the input value and a number from 1 to 3 (for demonstration)-->
+<!--        return Array.from({ length: 3 }, (_, index) => `${inputValue} Result ${index + 1}`);-->
+<!--    }-->
+
+<!--    // Function to select a suggestion and populate the corresponding input field-->
+<!--    function selectSuggestion(value, index) {-->
+<!--        inputFields[index].value = value;-->
+<!--        suggestionsDivs[index].innerHTML = ""; // Clear the suggestions-->
+<!--    }-->
+
+<!--    // Function to clear suggestions on blur (when the input field loses focus)-->
+<!--    function clearSuggestionsOnBlur(event) {-->
+<!--        const inputField = event.target;-->
+<!--        const index = inputFields.indexOf(inputField);-->
+<!--        if (index === -1) return;-->
+
+<!--        suggestionsDivs[index].innerHTML = ""; // Clear the suggestions-->
+<!--    }-->
+
+<!--    // Add the input event listener to the input fields-->
+<!--    inputFields.forEach((inputField) => {-->
+<!--        inputField.addEventListener("input", handleInputChange);-->
+<!--        inputField.addEventListener("blur", clearSuggestionsOnBlur);-->
+<!--    });-->
+
+<!--    // Handle form submission-->
+<!--    const form = document.getElementById("inputForm");-->
+<!--    form.addEventListener("submit", function(event) {-->
+<!--        event.preventDefault(); // Prevent form submission for this demonstration-->
+<!--        const values = inputFields.map(inputField => inputField.value).join("\n");-->
+<!--        alert("Form Submitted!\nValues:\n" + values);-->
+<!--    });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
