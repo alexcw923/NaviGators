@@ -1,0 +1,59 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nearby Places Search</title>
+</head>
+<body>
+    <label for="latitude">Latitude:</label>
+    <input type="text" id="latitude">
+
+    <label for="longitude">Longitude:</label>
+    <input type="text" id="longitude">
+
+    <button onclick="setLocation()">Set Location</button>
+    <hr>
+
+    <label for="category">Category:</label>
+    <input type="text" id="category">
+
+    <label for="search_radius">Search Radius:</label>
+    <input type="number" id="search_radius" value="25">
+
+    <label for="max_locations">Max Locations:</label>
+    <input type="number" id="max_locations" value="25">
+
+    <button onclick="searchPlacesByCategory()">Search Places</button>
+    <div id="jsonOutput"></div>
+
+    <script>
+        function setLocation() {
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            console.log(latitude, longitude);
+            fetch(`/set_location/?x=${latitude}&y=${longitude}`)
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error setting location:', error));
+        }
+
+        function searchPlacesByCategory() {
+            const category = document.getElementById('category').value;
+            const search_radius = document.getElementById('search_radius').value;
+            const max_locations = document.getElementById('max_locations').value;
+
+            fetch(`/search_places/?category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the JSON data here
+                    console.log(data);
+
+                    // For demonstration, display the JSON string in the div with id 'jsonOutput'
+                    document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+    </script>
+</body>
+</html>
