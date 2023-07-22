@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles'
-    'navigatorapp.NavigatorAppConfig' # added this
+    'django.contrib.staticfiles',
+    'navigatorapp'
+    # 'navigatorapp.NavigatorAppConfig' # added this
 ]
 
 MIDDLEWARE = [

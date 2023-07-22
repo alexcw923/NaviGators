@@ -1,6 +1,6 @@
 import json
 from django.views import View
-from src.place_search import NearbySearch
+# from src.place_search import NearbySearch
 from django.http import JsonResponse, HttpResponse
 from django.template import loader
 from django.shortcuts import render

@@ -20,3 +20,10 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
+
+# from django.urls import path, include
+# from ..navigatorapp import views
+
+# urlpatterns = [
+#     path('', views.index, 'index'),
+# ]
