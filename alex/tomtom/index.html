@@ -99,6 +99,7 @@
         });
 
         const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
+        const serviceAreaUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea";
 
         // view.on("click", function(event){
         //   console.log("Adding a point")
@@ -122,21 +123,19 @@
         //
         // });
 
-        // Create the location graphic
-        // function createGraphic(point) {
-        //   view.graphics.removeAll();
-        //   const graphic = new Graphic({
-        //     geometry: point,
-        //     symbol: {
-        //       type: "simple-marker",
-        //       color: "white",
-        //       size: 8
-        //     }
-        //   });
-        //
-        //   view.graphics.add(graphic);
-        //   return graphic;
-        // }
+        function createGraphic(point) {
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: {
+              type: "simple-marker",
+              color: "white",
+              size: 8
+            }
+          });
+
+          view.graphics.add(graphic);
+          return graphic;
+        }
 
         function addGraphic(type, point) {
           const graphic = new Graphic({
@@ -147,6 +146,7 @@
             },
             geometry: point
           });
+          view.graphics.add(graphic);
           const graphic2 = new Graphic({
             geometry: point,
             symbol: {
@@ -155,14 +155,56 @@
               size: 8
             }
           });
-          console.log("adding this graphic on the page ", point)
-          view.graphics.add(graphic);
           view.graphics.add(graphic2);
+
+          const locationGraphic = createGraphic(point);
+
+          const driveTimeCutoffs = [5,10,15]; // Minutes
+          const serviceAreaParams = createServiceAreaParams(locationGraphic, driveTimeCutoffs, view.spatialReference);
+          console.log("solveServiceArea output : ", solveServiceArea(serviceAreaUrl, serviceAreaParams));
+
+          console.log("adding this graphic on the page ", point)
         }
 
-        const searchWidget = new Search({
-          view: view
-        });
+
+
+        // const searchWidget = new Search({
+        //   view: view
+        // });
+
+        function solveServiceArea(url, serviceAreaParams) {
+          return serviceArea.solve(url, serviceAreaParams)
+                  .then(function(result){
+                    if (result.serviceAreaPolygons.features.length) {
+                      // Draw each service area polygon
+                      result.serviceAreaPolygons.features.forEach(function(graphic){
+                        graphic.symbol = {
+                          type: "simple-fill",
+                          color: "rgba(255,50,50,.25)"
+                        }
+                        view.graphics.add(graphic,0);
+                      });
+                      return result;
+                    }
+                  }, function(error){
+                    console.log(error);
+                  });
+        }
+
+        function createServiceAreaParams(locationGraphic, driveTimeCutoffs, outSpatialReference) {
+          const featureSet = new FeatureSet({
+            features: [locationGraphic]
+          });
+
+          // Set all of the input parameters for the service
+          const taskParameters = new ServiceAreaParams({
+            facilities: featureSet,
+            defaultBreaks: driveTimeCutoffs,
+            trimOuterPolygon: true,
+            outSpatialReference: outSpatialReference
+          });
+          return taskParameters;
+        }
 
         function getRoute() {
           const routeParams = new RouteParameters({
