@@ -19,16 +19,11 @@ Planning a road trip/long travel is an arduous process with many important varia
 - Generate a detailed itinerary for the trip, including recommended hotels, food stops, and suggested durations for each leg of the journey. 
 
 ## Development Plan of Action 
-
-[ ] Find navigation between two points on Map 
-
-[ ] ArcGIS Indoors already has ways for DWG files to get uploaded into ArcGIS Pro 
-
-[ ] Decide on basic set of preference for POC 
-
-[ ] Integrate findNewPlaces kind of api to search along the route 
-
-[ ] Design UI to render the itinerary 
-
-[ ] Add more options to add preferences on 
+- [x] Find navigation between two points on Map 
+- [ ] Decide on basic set of preference for POC
+- [ ] Break trip into preferences 
+- [ ] Integrate find New Places kind of api to search along 
+- [ ] Design UI to render the itinerary the route 
+- [ ] Add more options to add preferences on
+- [ ] Make cool promotion video animation using AI
 
