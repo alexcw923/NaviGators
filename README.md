@@ -16,7 +16,7 @@ Planning a road trip/long travel is an arduous process with many important varia
 - Optimal routes: Find the best route to a destination based on network datasets, travelling mode (transportation type, travelling speed, ) and current traffic situation.
 - Drive Guide: Display estimated driving durations and provide detail directions to destionations
 - Managaeble trips: Breaks the journey into stops based on user's preferences such as driving duration, fuel needs etc 
-- Best stops: Find best places around stops for lodging, food and other activites based on their prefereces () and budget constraints
+- Best stops: Find best places around stops for lodging, food and other activites based on their prefereces and budget constraints
 - Suggest activities or things to do around stops areas 
 - Generate a detailed itinerary for the trip
 
@@ -27,5 +27,5 @@ Planning a road trip/long travel is an arduous process with many important varia
 - [ ] Integrate find New Places kind of api to search along 
 - [ ] Design UI to render the itinerary the route 
 - [ ] Add more options to add preferences on
-- [ ] Make cool promotion video animation using AI
+- [X] Make cool promotion video animation using AI
 
