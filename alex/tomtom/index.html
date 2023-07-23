@@ -102,6 +102,9 @@
           zoom: 12
         });
 
+        // let points = []
+        // let pointGraphics = []
+
         const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
         const serviceAreaUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea";
 
@@ -137,14 +140,31 @@
             }
           });
 
+          const newTextGraphic = new Graphic({
+            geometry: point,
+            symbol: {
+              type: "text",
+              text: type,
+              color: [255, 255, 255],
+              haloColor: [1, 68, 33],
+              haloSize: 2,
+              font: {
+                family: "Arial Unicode MS",
+                size: 14
+              }
+            },
+            attributes: {
+              title: "text map note #"
+            }
+          });
+          view.graphics.add(newTextGraphic);
+
           view.graphics.add(graphic);
           return graphic;
         }
 
         function addPointGraphic(type, point) {
-          const graphic = createGraphic(type, point)
-          view.graphics.add(graphic);
-          return graphic;
+          return createGraphic(type, point)
         }
 
         function addServiceAreaGraphic(graphic) {
@@ -154,8 +174,22 @@
           return solveServiceArea(serviceAreaUrl, serviceAreaParams);
         }
 
-        // const searchWidget = new Search({
-        //   view: view
+        // view.on("click", function(event){
+        //   console.log("Adding a point")
+        //   console.log(event.mapPoint)
+        //   if (view.graphics.length === 0) {
+        //     points.push(event.mapPoint)
+        //     pointGraphics.push(addPointGraphic("origin", event.mapPoint));
+        //   } else if (view.graphics.length > 1) {
+        //     points.push(event.mapPoint)
+        //     pointGraphics.push(addPointGraphic("destination", event.mapPoint));
+        //     getNextRoute(points[0], pointGraphics[0], points[1], pointGraphics[1], 1)
+        //   } else {
+        //     view.graphics.removeAll();
+        //     points = []
+        //     points.push(event.mapPoint)
+        //     pointGraphics.push(addPointGraphic("origin", event.mapPoint));
+        //   }
         // });
 
         function solveServiceArea(url, serviceAreaParams) {
@@ -194,10 +228,10 @@
           return taskParameters;
         }
 
-        function getRoute() { // spatialReference
+        function getRoute(originGraphic, destinationGraphic) { // spatialReference
           const routeParams = new RouteParameters({
             stops: new FeatureSet({
-              features: view.graphics.toArray()
+              features: [originGraphic, destinationGraphic]
             }),
             returnDirections: true
           });
@@ -288,6 +322,44 @@
                   .catch(error => console.error('Error fetching data:', error));
         }
 
+        function addRouteGraphic(routeServiceResult) {
+            routeServiceResult.routeResults.forEach(function(result) {
+                  result.route.symbol = {
+                    type: "simple-line",
+                    color: [5, 150, 255],
+                    width: 3
+                  };
+                  view.graphics.add(result.route);
+                  view.extent = result.route.geometry.extent.expand(1.3);
+                });
+        }
+
+        function getNextRoute(originPoint, originGraphic, destinationPoint, destinationGraphic, blockNumber) {
+            const serviceArea = addServiceAreaGraphic(originGraphic); // Get service area from origin point
+            const getRouteResult = getRoute(originGraphic, destinationGraphic); // Call the route service
+
+            Promise.all([serviceArea, getRouteResult])
+                    .then((results) => {
+                        addRouteGraphic(results[1]);
+
+                        const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+                        intersection.then((result) => {
+                            if (result != undefined && result.paths.length > 0) {
+                                const intersectionPoint = result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1]
+                                const intersectionPointGraphic = addPointGraphic(blockNumber, new Point(intersectionPoint[0], intersectionPoint[1]))
+                                const isDestinationPointReachable =
+                                        geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry,
+                                                destinationPoint)
+                                isDestinationPointReachable.then((result) => {
+                                    if (!result) {
+                                      getNextRoute(intersectionPoint, intersectionPointGraphic, destinationPoint, destinationGraphic, 1+blockNumber)
+                                    }
+                                })
+                            }
+                        })
+                    })
+        }
+
         function handleSubmit(event) {
           event.preventDefault();
           // Your form handling logic here
@@ -296,79 +368,13 @@
 
           var originPoint = new Point(-118.24895493018086, 34.0423453366384);
           var destinationPoint = new Point(-116.0596534542991, 37.730250934373174);
+          const originGraphic = addPointGraphic("origin", originPoint);
+          const destinationGraphic = addPointGraphic("destination", destinationPoint);
 
+          getNextRoute(originPoint, originGraphic, destinationPoint, destinationGraphic, 1)
           // getNearbyPlaces(-118.24895493018086, 34.0423453366384);
           // getNearbyPlaces(-116.0596534542991, 37.730250934373174);
 
-          const originGraphic = addPointGraphic("origin", originPoint);
-          const originServiceAreaGraphic = addServiceAreaGraphic(originGraphic);
-          const destinationGraphic = addPointGraphic("destination", destinationPoint);
-          // const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
-
-          const getRouteResult = getRoute(); // Call the route service
-
-          Promise.all([originServiceAreaGraphic, getRouteResult])
-              .then((results) => {
-                  results[1].routeResults.forEach(function(result) {
-                          result.route.symbol = {
-                            type: "simple-line",
-                            color: [5, 150, 255],
-                            width: 3
-                          };
-                          view.graphics.add(result.route);
-                          view.extent = result.route.geometry.extent.expand(1.5);
-                      });
-
-                  // Display directions
-                  if (results[1].routeResults.length > 0) {
-                      const directions = document.createElement("ol");
-                      // const directions = document.getElementById("directions");
-                      directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
-                      directions.style.marginTop = "0";
-                      directions.style.padding = "15px 15px 15px 30px";
-                      const features = results[1].routeResults[0].directions.features;
-
-                      // Show each direction
-                      features.forEach(function(result,i){
-                        const direction = document.createElement("li");
-                        direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
-                        directions.appendChild(direction);
-                      });
-
-                      const uiDiv = document.getElementById("directions")
-                      uiDiv.appendChild(directions);
-                  }
-                  // const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
-                  const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
-                  console.log(results[0].serviceAreaPolygons.features[0])
-                  console.log(results[1].routeResults)
-                  intersection.then((result) => {
-                      console.log(result)
-                      const lineSymbol = {
-                          type: "simple-line",
-                          color: [150, 150, 25],
-                          width: 5
-                      };
-                      const lineAtt = {
-                          Name: "Keystone Pipeline", // The name of the pipeline
-                          Owner: "TransCanada", // The owner of the pipeline
-                          Length: "3,456 km" // The length of the pipeline
-                      };
-                      const polylineGraphic = new Graphic({
-                          geometry: result, // Add the geometry created in step 3
-                          symbol: lineSymbol, // Add the symbol created in step 4
-                          attributes: lineAtt // Add the attributes created in step 5
-                      });
-                      view.graphics.add(polylineGraphic);
-                      if (result != undefined && result.paths.length > 0) {
-                        // addPointGraphic("origin", result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1])
-                        const intersectionPoint = result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1]
-                        addPointGraphic("origin", new Point(intersectionPoint[0], intersectionPoint[1]))
-                      }
-                      // result.p
-                      // view.extent = result.route.geometry.extent.expand(1.5);
-                  })
-              });
         }
 
         const form = document.getElementById("myForm");
