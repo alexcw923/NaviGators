@@ -79,6 +79,7 @@
         "esri/views/MapView",
         "esri/geometry/Point",
         "esri/geometry/geometryEngineAsync",
+        "esri/geometry/geometryEngine",
         "esri/Graphic",
         "esri/rest/route",
         "esri/rest/support/RouteParameters",
@@ -86,7 +87,7 @@
         "esri/widgets/Search",
         "esri/rest/serviceArea",
         "esri/rest/support/ServiceAreaParameters"
-      ], function(esriConfig, Map, MapView, Point, geometryEngineAsync, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
+      ], function(esriConfig, Map, MapView, Point, geometryEngineAsync, geometryEngine, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
 
         esriConfig.apiKey = "AAPK820435f2f2c44734adb86048c24d7a461ZxGsDqRfXnapEWTXg2-4IVCqgz-ougtsHeUStNyAYnnWk8modZb_Xz2fh2dhbdV";
 
@@ -149,7 +150,7 @@
         function addServiceAreaGraphic(graphic) {
           const driveTimeCutoffs = [30]; // Minutes
           // const distanceCutoffs = [25,50,75]; // Miles
-          const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, view.spatialReference);
+          const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, 4326);
           return solveServiceArea(serviceAreaUrl, serviceAreaParams);
         }
 
@@ -193,7 +194,7 @@
           return taskParameters;
         }
 
-        function getRoute() {
+        function getRoute() { // spatialReference
           const routeParams = new RouteParameters({
             stops: new FeatureSet({
               features: view.graphics.toArray()
@@ -307,19 +308,19 @@
           const getRouteResult = getRoute(); // Call the route service
 
           Promise.all([originServiceAreaGraphic, getRouteResult])
-                  .then((results) => {
-                    results[1].routeResults.forEach(function(result) {
-                                  result.route.symbol = {
-                                    type: "simple-line",
-                                    color: [5, 150, 255],
-                                    width: 3
-                                  };
-                                  view.graphics.add(result.route);
-                                  view.extent = result.route.geometry.extent;
-                                });
+              .then((results) => {
+                  results[1].routeResults.forEach(function(result) {
+                          result.route.symbol = {
+                            type: "simple-line",
+                            color: [5, 150, 255],
+                            width: 3
+                          };
+                          view.graphics.add(result.route);
+                          view.extent = result.route.geometry.extent.expand(1.5);
+                      });
 
-                    // Display directions
-                    if (results[1].routeResults.length > 0) {
+                  // Display directions
+                  if (results[1].routeResults.length > 0) {
                       const directions = document.createElement("ol");
                       // const directions = document.getElementById("directions");
                       directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
@@ -336,17 +337,38 @@
 
                       const uiDiv = document.getElementById("directions")
                       uiDiv.appendChild(directions);
-                      // view.ui.empty("top-right");
-                      // view.ui.add(directions, "top-right");
-                    }
-                    const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
-                    console.log(results[0].serviceAreaPolygons.features[0])
-                    console.log(results[1].routeResults)
-                    // intersection.then((result) => {
-                    //   console.log(result)
-                    // })
-                    console.log(intersects)
-                  });
+                  }
+                  // const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+                  const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+                  console.log(results[0].serviceAreaPolygons.features[0])
+                  console.log(results[1].routeResults)
+                  intersection.then((result) => {
+                      console.log(result)
+                      const lineSymbol = {
+                          type: "simple-line",
+                          color: [150, 150, 25],
+                          width: 5
+                      };
+                      const lineAtt = {
+                          Name: "Keystone Pipeline", // The name of the pipeline
+                          Owner: "TransCanada", // The owner of the pipeline
+                          Length: "3,456 km" // The length of the pipeline
+                      };
+                      const polylineGraphic = new Graphic({
+                          geometry: result, // Add the geometry created in step 3
+                          symbol: lineSymbol, // Add the symbol created in step 4
+                          attributes: lineAtt // Add the attributes created in step 5
+                      });
+                      view.graphics.add(polylineGraphic);
+                      if (result != undefined && result.paths.length > 0) {
+                        // addPointGraphic("origin", result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1])
+                        const intersectionPoint = result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1]
+                        addPointGraphic("origin", new Point(intersectionPoint[0], intersectionPoint[1]))
+                      }
+                      // result.p
+                      // view.extent = result.route.geometry.extent.expand(1.5);
+                  })
+              });
         }
 
         const form = document.getElementById("myForm");
