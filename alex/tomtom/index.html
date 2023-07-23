@@ -255,7 +255,7 @@
         //           })
         // }
 
-        function getNearbyPlaces() {
+        function getNearbyPlaces(latitude, longitude) {
 
           // const category = document.getElementById('category').value;
           // const search_radius = document.getElementById('search_radius').value;
@@ -293,6 +293,9 @@
 
           var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
           var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
+
+          getNearbyPlaces(-118.24895493018086, 34.0423453366384);
+          getNearbyPlaces(-116.0596534542991, 37.730250934373174);
 
           const originGraphic = addPointGraphic("origin", dumeBeachPoint);
           const originServiceAreaGraphic = addServiceAreaGraphic(originGraphic);
