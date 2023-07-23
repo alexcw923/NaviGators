@@ -1,13 +1,14 @@
 from arcgis.gis import GIS
 from arcgis.geocoding import geocode
 import json, requests
+import sys
 
 class NearbySearch:
-    def __init__(self, location: tuple()) -> None:
+    def __init__(self, location = [-118.700549, 34.140505]) -> None:
         self.location = location
         self.gis=GIS()
         
-    def search_places(self, category, search_radius=25, max_locations=25) -> dict():
+    def search_places(self, category='beach', search_radius=25, max_locations=25) -> dict():
         """
             Search for places near the given category within the search_radius and return numbers of locations.
         Returns:
@@ -18,18 +19,19 @@ class NearbySearch:
             geocoded_features = geocode(
                 address=None,
                 location=self.location,
-                category=category
-                ,
+                category=category,
                 out_fields="Place_addr, PlaceName",
                 max_locations=max_locations,
                 distance=search_radius,
                 as_featureset=True,
             )
+            print("calculating")
             return json.dumps([{"PlaceName": row["PlaceName"], "Address": row['Place_addr'], "Coordinates": {"x":row["SHAPE"]["x"],"y":row["SHAPE"]["y"]}}  
                 for _, row in geocoded_features.sdf.iterrows()])
-        except:
+        except Exception as e:
             # Should display "no result found" if return list is empty
-            return json.dumps([])
+            
+            return json.dumps([str(e)])
 
     
     
