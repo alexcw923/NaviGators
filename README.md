@@ -1,5 +1,5 @@
 # NaviGators
-Trying to plan a road trip but don't want the crocodile tears? Plan with Navigator
+Trying to plan a road trip but don't want the crocodile tears? Plan with NaviGator!
 
 ![Trying to plan a road trip with your friends, but don't want the crocodile tears?!](/assets/images/nav-logo.png "Navigator")
 
