@@ -76,6 +76,7 @@
         "esri/Map",
         "esri/views/MapView",
         "esri/geometry/Point",
+        "esri/geometry/geometryEngineAsync",
         "esri/Graphic",
         "esri/rest/route",
         "esri/rest/support/RouteParameters",
@@ -83,7 +84,7 @@
         "esri/widgets/Search",
         "esri/rest/serviceArea",
         "esri/rest/support/ServiceAreaParameters"
-      ], function(esriConfig, Map, MapView, Point, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
+      ], function(esriConfig, Map, MapView, Point, geometryEngineAsync, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
 
         esriConfig.apiKey = "AAPK820435f2f2c44734adb86048c24d7a461ZxGsDqRfXnapEWTXg2-4IVCqgz-ougtsHeUStNyAYnnWk8modZb_Xz2fh2dhbdV";
 
@@ -144,7 +145,7 @@
         }
 
         function addServiceAreaGraphic(graphic) {
-          const driveTimeCutoffs = [5,10,15]; // Minutes
+          const driveTimeCutoffs = [15]; // Minutes
           // const distanceCutoffs = [25,50,75]; // Miles
           const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, view.spatialReference);
           return solveServiceArea(serviceAreaUrl, serviceAreaParams);
@@ -193,51 +194,95 @@
             stops: new FeatureSet({
               features: view.graphics.toArray()
             }),
-
             returnDirections: true
-
           });
 
-          route.solve(routeUrl, routeParams)
-                  .then(function(data) {
-                    data.routeResults.forEach(function(result) {
-                      result.route.symbol = {
-                        type: "simple-line",
-                        color: [5, 150, 255],
-                        width: 3
-                      };
-                      view.graphics.add(result.route);
-                      // view.setViewPoint(result.route.geometry.extent)
-                      view.extent = result.route.geometry.extent
-                      console.log(view)
-                    });
+          return route.solve(routeUrl, routeParams);
+        }
 
-                    // Display directions
-                    if (data.routeResults.length > 0) {
-                      const directions = document.createElement("ol");
-                      directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
-                      directions.style.marginTop = "0";
-                      directions.style.padding = "15px 15px 15px 30px";
-                      const features = data.routeResults[0].directions.features;
+        // function getRoute() {
+        //   const routeParams = new RouteParameters({
+        //     stops: new FeatureSet({
+        //       features: view.graphics.toArray()
+        //     }),
+        //
+        //     returnDirections: true
+        //
+        //   });
+        //
+        //   const routePromise = route.solve(routeUrl, routeParams)
+        //   routePromise.then(function(data) {
+        //             data.routeResults.forEach(function(result) {
+        //               result.route.symbol = {
+        //                 type: "simple-line",
+        //                 color: [5, 150, 255],
+        //                 width: 3
+        //               };
+        //               view.graphics.add(result.route);
+        //               view.extent = result.route.geometry.extent
+        //             });
+        //             // console.log(data.routeResults)
+        //
+        //             // Display directions
+        //             // if (data.routeResults.length > 0) {
+        //             //   const directions = document.createElement("ol");
+        //             //   directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+        //             //   directions.style.marginTop = "0";
+        //             //   directions.style.padding = "15px 15px 15px 30px";
+        //             //   const features = data.routeResults[0].directions.features;
+        //             //
+        //             //   // Show each direction
+        //             //   features.forEach(function(result,i){
+        //             //     const direction = document.createElement("li");
+        //             //     direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+        //             //     directions.appendChild(direction);
+        //             //   });
+        //             //
+        //             //   view.ui.empty("top-right");
+        //             //   view.ui.add(directions, "top-right");
+        //             //   return features;    // returning the
+        //             // }
+        //             // return new Promise((resolve, reject) => {
+        //             //   try {
+        //             //     resolve(data.routeResults);
+        //             //   } catch (error) {
+        //             //     reject(error);
+        //             //   }
+        //             // });
+        //           })
+        //           .catch(function(error){
+        //             console.log(error);
+        //           })
+        // }
 
-                      // Show each direction
-                      features.forEach(function(result,i){
-                        const direction = document.createElement("li");
-                        direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
-                        directions.appendChild(direction);
-                      });
+        function getNearbyPlaces() {
 
-                      view.ui.empty("top-right");
-                      view.ui.add(directions, "top-right");
+          // const category = document.getElementById('category').value;
+          // const search_radius = document.getElementById('search_radius').value;
+          // const max_locations = document.getElementById('max_locations').value;
 
+          const category = "food";
+          const search_radius = 25;
+          const max_locations = 25;
+
+          fetch(`http://127.0.0.1:8000/search/?latitude=${latitude}&longitude=${longitude}&category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
+                  .then(response => response.json())
+                  .then(data => {
+                    // Handle the JSON data here
+                    // For demonstration, display the JSON string in the div with id 'jsonOutput'
+                    document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+                    let arr = [];
+                    console.log(data);
+                    for (k in data) {
+                      arr.push(new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']));
                     }
 
+                    for (coords in arr) {
+                      addPointGraphic("", coords);
+                      cosole.log("added point")
+                    }
                   })
-
-                  .catch(function(error){
-                    console.log(error);
-                  })
-
+                  .catch(error => console.error('Error fetching data:', error));
         }
 
         function handleSubmit(event) {
@@ -245,8 +290,6 @@
           // Your form handling logic here
           const originValue = document.getElementById("origin").value;
           const destinationValue = document.getElementById("destination").value;
-          console.log("Origin:", originValue);
-          console.log("Destination:", destinationValue);
 
           var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
           var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
@@ -256,7 +299,29 @@
           const destinationGraphic = addPointGraphic("destination", anotherPoint);
           const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
 
-          getRoute(); // Call the route service
+          const getRouteResult = getRoute(); // Call the route service
+
+          Promise.all([originServiceAreaGraphic, getRouteResult])
+                  .then((results) => {
+                    results[1].routeResults.forEach(function(result) {
+                                  result.route.symbol = {
+                                    type: "simple-line",
+                                    color: [5, 150, 255],
+                                    width: 3
+                                  };
+                                  view.graphics.add(result.route);
+                                  view.extent = result.route.geometry.extent;
+                                });
+                    const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+                    console.log(results[0].serviceAreaPolygons.features[0])
+                    console.log(results[1].routeResults[0].route)
+                    intersection.then((result) => {
+                      console.log(result)
+                    })
+
+                  });
+
+
 
         }
 
