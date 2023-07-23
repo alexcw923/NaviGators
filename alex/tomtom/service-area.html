@@ -1,0 +1,307 @@
+<html>
+<head>
+    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/searchbar.css">
+    <link rel="stylesheet" href="style/sidebar.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.27/"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+    <title>Map API Experiment</title>
+</head>
+<body style="width: 100%; height: 100%; margin: 0; padding: 0;">
+<!-- top of the web page -->
+<div class="header">
+    <button class="openbtn" onclick="toggleSidebar()">&#9776;</button>
+
+    <div class="wrapper">
+        <!-- search bar -->
+        <div class="searchBar">
+            <input id="searchQueryInput" type="text" name="searchQueryInput" placeholder="Search" value="" />
+            <!-- submit button for search query -->
+            <button id="searchQuerySubmit" type="submit" name="searchQuerySubmit">
+                <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                    <path fill="#666666" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11
+              15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,
+              20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,
+              16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,
+              3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,
+              12 14,9.5C14,7 12,5 9.5,5Z" />
+                </svg>
+            </button>
+        </div>
+
+    </div>
+</div>
+<div class="body">
+    <!-- user utilities on the left hand side (could make it hidden) -->
+    <div id="leftSideBar" class="sidebar">
+        <a href="#">Profile</a>
+        <a href="#">Favorite</a>
+        <a href="#">Feed</a>
+        <a href="#">Settings</a>
+
+    </div>
+    <div id="content">
+
+<!--        <div class="userPreferences" style="background-color: #f0f0f0;">-->
+<!--            <form id="myForm">-->
+<!--                <div>-->
+<!--                    <label for="origin">Origin:</label>-->
+<!--                    <input type="text" id="origin" name="origin" required>-->
+<!--                </div>-->
+
+<!--                <div>-->
+<!--                    <label for="destination">Destination:</label>-->
+<!--                    <input type="text" id="destination" name="destination" required>-->
+<!--                </div>-->
+
+<!--                <div>-->
+<!--                    <input type="submit" value="Submit">-->
+<!--                </div>-->
+<!--            </form>-->
+<!--            <br>-->
+<!--            <div class="scrollable-container"  id="directions"></div>-->
+<!--        </div>-->
+
+<!--        <div class="mapContainer" style="background-color: #fafafa;">-->
+<!--            <div id="map"></div>-->
+<!--        </div>-->
+        <div id="map"></div>
+    </div>
+
+
+</div>
+
+<script>
+
+    require([
+        "esri/config",
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/geometry/Point",
+        "esri/geometry/geometryEngineAsync",
+        "esri/Graphic",
+        "esri/rest/route",
+        "esri/rest/support/RouteParameters",
+        "esri/rest/support/FeatureSet",
+        "esri/widgets/Search",
+        "esri/rest/serviceArea",
+        "esri/rest/support/ServiceAreaParameters"
+    ], function(esriConfig, Map, MapView, Point, geometryEngineAsync, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
+
+        esriConfig.apiKey = "AAPK820435f2f2c44734adb86048c24d7a461ZxGsDqRfXnapEWTXg2-4IVCqgz-ougtsHeUStNyAYnnWk8modZb_Xz2fh2dhbdV";
+
+        const map = new Map({
+            basemap: "arcgis-navigation" //Basemap layer service
+        });
+
+        const view = new MapView({
+            container: "map",
+            map: map,
+            center: [-118.24532,34.05398], //Longitude, latitude
+            zoom: 12
+        });
+
+        const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
+        const serviceAreaUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea";
+
+        view.on("click", function(event){
+          if (view.graphics.length === 0) {
+              const graphic = addPointGraphic("origin", event.mapPoint);
+              const originServiceAreaGraphic = addServiceAreaGraphic(graphic);
+          } else {
+              view.graphics.removeAll();
+              const graphic = addPointGraphic("origin",event.mapPoint);
+              const originServiceAreaGraphic = addServiceAreaGraphic(graphic);
+          }
+        });
+
+        function createGraphic(type, point) {
+            const graphic = new Graphic({
+                geometry: point,
+                symbol: {
+                    type: "simple-marker",
+                    color: (type === "origin") ? "white" : "black",
+                    size: 8
+                }
+            });
+
+            view.graphics.add(graphic);
+            return graphic;
+        }
+
+        function addPointGraphic(type, point) {
+            const graphic = createGraphic(type, point)
+            view.graphics.add(graphic);
+            return graphic;
+        }
+
+        function addServiceAreaGraphic(graphic) {
+            const driveTimeCutoffs = [30]; // Minutes
+            // const distanceCutoffs = [25,50,75]; // Miles
+            const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, view.spatialReference);
+            return solveServiceArea(serviceAreaUrl, serviceAreaParams);
+        }
+
+        // const searchWidget = new Search({
+        //   view: view
+        // });
+
+        function solveServiceArea(url, serviceAreaParams) {
+            return serviceArea.solve(url, serviceAreaParams)
+                .then(function(result){
+                    if (result.serviceAreaPolygons.features.length) {
+                        // Draw each service area polygon
+                        result.serviceAreaPolygons.features.forEach(function(graphic){
+                            graphic.symbol = {
+                                type: "simple-fill",
+                                color: "rgba(255,50,50,.25)"
+                            }
+                            view.graphics.add(graphic,0);
+                        });
+                        return result;
+                    }
+                }, function(error){
+                    console.log(error);
+                });
+        }
+
+        function createServiceAreaParams(locationGraphic, driveTimeCutoffs, outSpatialReference) {
+            const featureSet = new FeatureSet({
+                features: [locationGraphic]
+            });
+
+            // Set all of the input parameters for the service
+            const taskParameters = new ServiceAreaParams({
+                facilities: featureSet,
+                defaultBreaks: driveTimeCutoffs,
+                returnPolygons:true,
+                travel_mode: "Custom",
+                trimOuterPolygon: true,
+                outSpatialReference: outSpatialReference
+            });
+            return taskParameters;
+        }
+
+        function getNearbyPlaces(latitude, longitude) {
+
+            // const category = document.getElementById('category').value;
+            // const search_radius = document.getElementById('search_radius').value;
+            // const max_locations = document.getElementById('max_locations').value;
+
+            const category = "food";
+            const search_radius = 25;
+            const max_locations = 25;
+
+            fetch(`http://127.0.0.1:8000/search/?latitude=${latitude}&longitude=${longitude}&category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the JSON data here
+                    // For demonstration, display the JSON string in the div with id 'jsonOutput'
+                    document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+                    let arr = [];
+                    console.log(data);
+                    for (k in data) {
+                        arr.push(new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']));
+                    }
+
+                    for (coords in arr) {
+                        addPointGraphic("origin", coords);
+                        cosole.log("added point")
+                    }
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            // Your form handling logic here
+            const originValue = document.getElementById("origin").value;
+            const destinationValue = document.getElementById("destination").value;
+
+            var originPoint = new Point(-118.24895493018086, 34.0423453366384);
+            var destinationPoint = new Point(-116.0596534542991, 37.730250934373174);
+
+            // getNearbyPlaces(-118.24895493018086, 34.0423453366384);
+            // getNearbyPlaces(-116.0596534542991, 37.730250934373174);
+
+            const originGraphic = addPointGraphic("origin", originPoint);
+            const originServiceAreaGraphic = addServiceAreaGraphic(originGraphic);
+            const destinationGraphic = addPointGraphic("destination", destinationPoint);
+            // const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
+
+            const getRouteResult = getRoute(); // Call the route service
+
+            Promise.all([originServiceAreaGraphic, getRouteResult])
+                .then((results) => {
+                    results[1].routeResults.forEach(function(result) {
+                        result.route.symbol = {
+                            type: "simple-line",
+                            color: [5, 150, 255],
+                            width: 3
+                        };
+                        view.graphics.add(result.route);
+                        view.extent = result.route.geometry.extent;
+                    });
+
+                    // Display directions
+                    if (results[1].routeResults.length > 0) {
+                        const directions = document.createElement("ol");
+                        // const directions = document.getElementById("directions");
+                        directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+                        directions.style.marginTop = "0";
+                        directions.style.padding = "15px 15px 15px 30px";
+                        const features = results[1].routeResults[0].directions.features;
+
+                        // Show each direction
+                        features.forEach(function(result,i){
+                            const direction = document.createElement("li");
+                            direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+                            directions.appendChild(direction);
+                        });
+
+                        const uiDiv = document.getElementById("directions")
+                        uiDiv.appendChild(directions);
+                        // view.ui.empty("top-right");
+                        // view.ui.add(directions, "top-right");
+                    }
+                    const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+                    console.log(results[0].serviceAreaPolygons.features[0])
+                    console.log(results[1].routeResults)
+                    // intersection.then((result) => {
+                    //   console.log(result)
+                    // })
+                    console.log(intersects)
+                });
+        }
+
+        const form = document.getElementById("myForm");
+        form.addEventListener("submit", handleSubmit);
+
+    });
+
+
+</script>
+
+<script>
+
+    function toggleSidebar() {
+        var sidebar = document.getElementById("leftSideBar");
+        var content = document.getElementById("content");
+        const size = "120px"
+        if (sidebar.style.width === size) {
+            console.log(sidebar.style.width)
+            sidebar.style.width = "0px";
+            content.style.marginLeft = "0px";
+
+        } else {
+            console.log("Hello")
+            console.log(sidebar.style.width)
+            sidebar.style.width = size;
+            content.style.marginLeft = size;
+        }
+    }
+
+</script>
+</body>
+</html>

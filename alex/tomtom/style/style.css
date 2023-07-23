@@ -77,3 +77,8 @@ body {
     cursor: pointer;
 }
 
+/* Add styles to make the container scrollable */
+.scrollable-container {
+    height: 200px; /* Set the desired height here */
+    overflow: auto;
+}

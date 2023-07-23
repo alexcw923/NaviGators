@@ -59,6 +59,8 @@
               <input type="submit" value="Submit">
             </div>
           </form>
+          <br>
+          <div class="scrollable-container"  id="directions"></div>
         </div>
 
         <div class="mapContainer" style="background-color: #fafafa;">
@@ -145,7 +147,7 @@
         }
 
         function addServiceAreaGraphic(graphic) {
-          const driveTimeCutoffs = [15]; // Minutes
+          const driveTimeCutoffs = [30]; // Minutes
           // const distanceCutoffs = [25,50,75]; // Miles
           const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, view.spatialReference);
           return solveServiceArea(serviceAreaUrl, serviceAreaParams);
@@ -183,6 +185,8 @@
           const taskParameters = new ServiceAreaParams({
             facilities: featureSet,
             defaultBreaks: driveTimeCutoffs,
+            returnPolygons:true,
+            travel_mode: "Custom",
             trimOuterPolygon: true,
             outSpatialReference: outSpatialReference
           });
@@ -200,60 +204,58 @@
           return route.solve(routeUrl, routeParams);
         }
 
-        // function getRoute() {
-        //   const routeParams = new RouteParameters({
-        //     stops: new FeatureSet({
-        //       features: view.graphics.toArray()
-        //     }),
-        //
-        //     returnDirections: true
-        //
-        //   });
-        //
-        //   const routePromise = route.solve(routeUrl, routeParams)
-        //   routePromise.then(function(data) {
-        //             data.routeResults.forEach(function(result) {
-        //               result.route.symbol = {
-        //                 type: "simple-line",
-        //                 color: [5, 150, 255],
-        //                 width: 3
-        //               };
-        //               view.graphics.add(result.route);
-        //               view.extent = result.route.geometry.extent
-        //             });
-        //             // console.log(data.routeResults)
-        //
-        //             // Display directions
-        //             // if (data.routeResults.length > 0) {
-        //             //   const directions = document.createElement("ol");
-        //             //   directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
-        //             //   directions.style.marginTop = "0";
-        //             //   directions.style.padding = "15px 15px 15px 30px";
-        //             //   const features = data.routeResults[0].directions.features;
-        //             //
-        //             //   // Show each direction
-        //             //   features.forEach(function(result,i){
-        //             //     const direction = document.createElement("li");
-        //             //     direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
-        //             //     directions.appendChild(direction);
-        //             //   });
-        //             //
-        //             //   view.ui.empty("top-right");
-        //             //   view.ui.add(directions, "top-right");
-        //             //   return features;    // returning the
-        //             // }
-        //             // return new Promise((resolve, reject) => {
-        //             //   try {
-        //             //     resolve(data.routeResults);
-        //             //   } catch (error) {
-        //             //     reject(error);
-        //             //   }
-        //             // });
-        //           })
-        //           .catch(function(error){
-        //             console.log(error);
-        //           })
-        // }
+        function getRoute2() {
+          const routeParams = new RouteParameters({
+            stops: new FeatureSet({
+              features: view.graphics.toArray()
+            }),
+            returnDirections: true
+          });
+
+          const routePromise = route.solve(routeUrl, routeParams)
+          routePromise.then(function(data) {
+                    data.routeResults.forEach(function(result) {
+                      result.route.symbol = {
+                        type: "simple-line",
+                        color: [5, 150, 255],
+                        width: 3
+                      };
+                      view.graphics.add(result.route);
+                      view.extent = result.route.geometry.extent
+                    });
+                    // console.log(data.routeResults)
+
+                    // Display directions
+                    if (data.routeResults.length > 0) {
+                        const directions = document.createElement("ol");
+                        directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+                        directions.style.marginTop = "0";
+                        directions.style.padding = "15px 15px 15px 30px";
+                        const features = data.routeResults[0].directions.features;
+
+                        // Show each direction
+                        features.forEach(function(result,i){
+                          const direction = document.createElement("li");
+                          direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+                          directions.appendChild(direction);
+                        });
+
+                        view.ui.empty("top-right");
+                        view.ui.add(directions, "top-right");
+                        return features;    // returning the
+                    }
+                    return new Promise((resolve, reject) => {
+                      try {
+                        resolve(data.routeResults);
+                      } catch (error) {
+                        reject(error);
+                      }
+                    });
+                  })
+                  .catch(function(error){
+                    console.log(error);
+                  })
+        }
 
         function getNearbyPlaces(latitude, longitude) {
 
@@ -278,7 +280,7 @@
                     }
 
                     for (coords in arr) {
-                      addPointGraphic("", coords);
+                      addPointGraphic("origin", coords);
                       cosole.log("added point")
                     }
                   })
@@ -291,16 +293,16 @@
           const originValue = document.getElementById("origin").value;
           const destinationValue = document.getElementById("destination").value;
 
-          var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
-          var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
+          var originPoint = new Point(-118.24895493018086, 34.0423453366384);
+          var destinationPoint = new Point(-116.0596534542991, 37.730250934373174);
 
-          getNearbyPlaces(-118.24895493018086, 34.0423453366384);
-          getNearbyPlaces(-116.0596534542991, 37.730250934373174);
+          // getNearbyPlaces(-118.24895493018086, 34.0423453366384);
+          // getNearbyPlaces(-116.0596534542991, 37.730250934373174);
 
-          const originGraphic = addPointGraphic("origin", dumeBeachPoint);
+          const originGraphic = addPointGraphic("origin", originPoint);
           const originServiceAreaGraphic = addServiceAreaGraphic(originGraphic);
-          const destinationGraphic = addPointGraphic("destination", anotherPoint);
-          const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
+          const destinationGraphic = addPointGraphic("destination", destinationPoint);
+          // const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
 
           const getRouteResult = getRoute(); // Call the route service
 
@@ -315,17 +317,36 @@
                                   view.graphics.add(result.route);
                                   view.extent = result.route.geometry.extent;
                                 });
-                    const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+
+                    // Display directions
+                    if (results[1].routeResults.length > 0) {
+                      const directions = document.createElement("ol");
+                      // const directions = document.getElementById("directions");
+                      directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+                      directions.style.marginTop = "0";
+                      directions.style.padding = "15px 15px 15px 30px";
+                      const features = results[1].routeResults[0].directions.features;
+
+                      // Show each direction
+                      features.forEach(function(result,i){
+                        const direction = document.createElement("li");
+                        direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+                        directions.appendChild(direction);
+                      });
+
+                      const uiDiv = document.getElementById("directions")
+                      uiDiv.appendChild(directions);
+                      // view.ui.empty("top-right");
+                      // view.ui.add(directions, "top-right");
+                    }
+                    const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
                     console.log(results[0].serviceAreaPolygons.features[0])
-                    console.log(results[1].routeResults[0].route)
-                    intersection.then((result) => {
-                      console.log(result)
-                    })
-
+                    console.log(results[1].routeResults)
+                    // intersection.then((result) => {
+                    //   console.log(result)
+                    // })
+                    console.log(intersects)
                   });
-
-
-
         }
 
         const form = document.getElementById("myForm");
