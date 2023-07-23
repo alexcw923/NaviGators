@@ -123,12 +123,12 @@
         //
         // });
 
-        function createGraphic(point) {
+        function createGraphic(type, point) {
           const graphic = new Graphic({
             geometry: point,
             symbol: {
               type: "simple-marker",
-              color: "white",
+              color: (type === "origin") ? "white" : "black",
               size: 8
             }
           });
@@ -137,36 +137,18 @@
           return graphic;
         }
 
-        function addGraphic(type, point) {
-          const graphic = new Graphic({
-            symbol: {
-              type: "simple-marker",
-              color: (type === "origin") ? "white" : "black",
-              size: "8px"
-            },
-            geometry: point
-          });
+        function addPointGraphic(type, point) {
+          const graphic = createGraphic(type, point)
           view.graphics.add(graphic);
-          const graphic2 = new Graphic({
-            geometry: point,
-            symbol: {
-              type: "simple-marker",
-              color: "white",
-              size: 8
-            }
-          });
-          view.graphics.add(graphic2);
-
-          const locationGraphic = createGraphic(point);
-
-          const driveTimeCutoffs = [5,10,15]; // Minutes
-          const serviceAreaParams = createServiceAreaParams(locationGraphic, driveTimeCutoffs, view.spatialReference);
-          console.log("solveServiceArea output : ", solveServiceArea(serviceAreaUrl, serviceAreaParams));
-
-          console.log("adding this graphic on the page ", point)
+          return graphic;
         }
 
-
+        function addServiceAreaGraphic(graphic) {
+          const driveTimeCutoffs = [5,10,15]; // Minutes
+          // const distanceCutoffs = [25,50,75]; // Miles
+          const serviceAreaParams = createServiceAreaParams(graphic, driveTimeCutoffs, view.spatialReference);
+          return solveServiceArea(serviceAreaUrl, serviceAreaParams);
+        }
 
         // const searchWidget = new Search({
         //   view: view
@@ -269,11 +251,11 @@
           var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
           var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
 
-          addGraphic("origin", dumeBeachPoint);
-          addGraphic("destination", anotherPoint);
-          //
-          // const originLocationGraphic = createGraphic(dumeBeachPoint);
-          // const destinationLocationGraphic = createGraphic(anotherPoint);
+          const originGraphic = addPointGraphic("origin", dumeBeachPoint);
+          const originServiceAreaGraphic = addServiceAreaGraphic(originGraphic);
+          const destinationGraphic = addPointGraphic("destination", anotherPoint);
+          const destinationServiceAreaGraphic = addServiceAreaGraphic(destinationGraphic);
+
           getRoute(); // Call the route service
 
         }
