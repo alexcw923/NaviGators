@@ -59,6 +59,58 @@
             <div>
               <input type="submit" value="Submit">
             </div>
+          
+            <div>
+              <label for="latitude">Latitude:</label>
+              <input type="text" id="latitude">
+            </div>
+
+            <div>
+              <label for="longitude">Longitude:</label>
+              <input type="text" id="longitude">
+            </div>
+
+            <div>
+              <label for="category">Category:</label>
+              <input type="text" id="category">
+            </div>
+
+            <div>
+              <label for="search_radius">Search Radius:</label>
+              <input type="number" id="search_radius" value="25">
+            </div>
+
+            <div>
+              <label for="max_locations">Max Locations:</label>
+              <input type="number" id="max_locations" value="25">
+            </div>
+
+            <div>
+              <button onclick="getNearbyPlaces()">Get Nearby Places</button>
+              <div id="jsonOutput"></div>
+            </div>
+            
+              <script>
+                  function getNearbyPlaces() {
+                      const latitude = document.getElementById('latitude').value;
+                      const longitude = document.getElementById('longitude').value;
+                      const category = document.getElementById('category').value;
+                      const search_radius = document.getElementById('search_radius').value;
+                      const max_locations = document.getElementById('max_locations').value;
+                      console.log("Hello")
+                      fetch(`http://127.0.0.1:8000/search/?latitude=${latitude}&longitude=${longitude}&category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
+                          .then(response => response.json())
+                          .then(data => {
+                              // Handle the JSON data here
+                              console.log(data);
+
+                              // For demonstration, display the JSON string in the div with id 'jsonOutput'
+                              document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+                          })
+                          .catch(error => console.error('Error fetching data:', error));
+                  }
+              </script>
+
           </form>
         </div>
 
@@ -76,12 +128,15 @@
         "esri/config",
         "esri/Map",
         "esri/views/MapView",
+        "esri/geometry/Point",
         "esri/Graphic",
         "esri/rest/route",
         "esri/rest/support/RouteParameters",
-        "esri/rest/support/FeatureSet"
-
-      ], function(esriConfig, Map, MapView, Graphic, route, RouteParameters, FeatureSet) {
+        "esri/rest/support/FeatureSet",
+        "esri/widgets/Search",
+        "esri/rest/serviceArea",
+        "esri/rest/support/ServiceAreaParameters"
+      ], function(esriConfig, Map, MapView, Point, Graphic, route, RouteParameters, FeatureSet, Search, serviceArea, ServiceAreaParams) {
 
         esriConfig.apiKey = "AAPK820435f2f2c44734adb86048c24d7a461ZxGsDqRfXnapEWTXg2-4IVCqgz-ougtsHeUStNyAYnnWk8modZb_Xz2fh2dhbdV";
 
@@ -97,22 +152,43 @@
         });
 
         const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
+        const serviceAreaUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea";
 
-        view.on("click", function(event){
+        // view.on("click", function(event){
+        //   console.log("Adding a point")
+        //   console.log(event.mapPoint)
+        //   if (view.graphics.length === 0) {
+        //     // addGraphic("origin", event.mapPoint);
+        //     var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
+        //     addGraphic("origin", dumeBeachPoint);
+        //   } else if (view.graphics.length === 1) {
+        //     // addGraphic("destination", event.mapPoint);
+        //     var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
+        //     addGraphic("destination", anotherPoint);
+        //
+        //     getRoute(); // Call the route service
+        //   } else {
+        //     view.graphics.removeAll();
+        //     // addGraphic("origin",event.mapPoint);
+        //     var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
+        //     addGraphic("origin", dumeBeachPoint);
+        //   }
+        //
+        // });
 
-          if (view.graphics.length === 0) {
-            addGraphic("origin", event.mapPoint);
-          } else if (view.graphics.length === 1) {
-            addGraphic("destination", event.mapPoint);
+        function createGraphic(point) {
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: {
+              type: "simple-marker",
+              color: "white",
+              size: 8
+            }
+          });
 
-            getRoute(); // Call the route service
-
-          } else {
-            view.graphics.removeAll();
-            addGraphic("origin",event.mapPoint);
-          }
-
-        });
+          view.graphics.add(graphic);
+          return graphic;
+        }
 
         function addGraphic(type, point) {
           const graphic = new Graphic({
@@ -124,6 +200,63 @@
             geometry: point
           });
           view.graphics.add(graphic);
+          const graphic2 = new Graphic({
+            geometry: point,
+            symbol: {
+              type: "simple-marker",
+              color: "white",
+              size: 8
+            }
+          });
+          view.graphics.add(graphic2);
+
+          const locationGraphic = createGraphic(point);
+
+          const driveTimeCutoffs = [5,10,15]; // Minutes
+          const serviceAreaParams = createServiceAreaParams(locationGraphic, driveTimeCutoffs, view.spatialReference);
+          console.log("solveServiceArea output : ", solveServiceArea(serviceAreaUrl, serviceAreaParams));
+
+          console.log("adding this graphic on the page ", point)
+        }
+
+
+
+        // const searchWidget = new Search({
+        //   view: view
+        // });
+
+        function solveServiceArea(url, serviceAreaParams) {
+          return serviceArea.solve(url, serviceAreaParams)
+                  .then(function(result){
+                    if (result.serviceAreaPolygons.features.length) {
+                      // Draw each service area polygon
+                      result.serviceAreaPolygons.features.forEach(function(graphic){
+                        graphic.symbol = {
+                          type: "simple-fill",
+                          color: "rgba(255,50,50,.25)"
+                        }
+                        view.graphics.add(graphic,0);
+                      });
+                      return result;
+                    }
+                  }, function(error){
+                    console.log(error);
+                  });
+        }
+
+        function createServiceAreaParams(locationGraphic, driveTimeCutoffs, outSpatialReference) {
+          const featureSet = new FeatureSet({
+            features: [locationGraphic]
+          });
+
+          // Set all of the input parameters for the service
+          const taskParameters = new ServiceAreaParams({
+            facilities: featureSet,
+            defaultBreaks: driveTimeCutoffs,
+            trimOuterPolygon: true,
+            outSpatialReference: outSpatialReference
+          });
+          return taskParameters;
         }
 
         function getRoute() {
@@ -145,6 +278,9 @@
                         width: 3
                       };
                       view.graphics.add(result.route);
+                      // view.setViewPoint(result.route.geometry.extent)
+                      view.extent = result.route.geometry.extent
+                      console.log(view)
                     });
 
                     // Display directions
@@ -182,26 +318,21 @@
           const destinationValue = document.getElementById("destination").value;
           console.log("Origin:", originValue);
           console.log("Destination:", destinationValue);
+
+          var dumeBeachPoint = new Point(-118.24895493018086, 34.0423453366384);
+          var anotherPoint = new Point(-116.0596534542991, 37.730250934373174);
+
+          addGraphic("origin", dumeBeachPoint);
+          addGraphic("destination", anotherPoint);
           //
-          // var latitude = 50.250000; // No difference if values are between 19.75N and 50.25N
-          // var longitude = -81.000000; // 81.0W is the central meridian for UTM 17N
-          // const spref: SpatialReference = new SpatialReference(26717); // NAD_1927_UTM_Zone_17N
-          // MapPoint baseMapPoint = new MapPoint(longitude, latitude, SpatialReferences.Wgs84);
-          //
-          // MapPoint mapPoint1 = GeometryEngine.Project(baseMapPoint, spref) as MapPoint;
-          // MapPoint mapPoint2 = ConvertCoordinate.FromDecimalDegrees(string.Format("{0},{1}", latitude, longitude), spref);
-          //
-          //
-          //
-          // addGraphic("origin", event.mapPoint);
-          // addGraphic("destination", event.mapPoint);
+          // const originLocationGraphic = createGraphic(dumeBeachPoint);
+          // const destinationLocationGraphic = createGraphic(anotherPoint);
+          getRoute(); // Call the route service
 
         }
 
         const form = document.getElementById("myForm");
         form.addEventListener("submit", handleSubmit);
-
-
 
       });
 
