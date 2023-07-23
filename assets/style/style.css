@@ -39,6 +39,21 @@ body {
     display:flex;
     width: 100%;
 }
+
+/* Set a fixed height for the results container to make it scrollable */
+.results-container {
+    height: 300px; /* Adjust the height as per your requirement */
+    overflow: auto; /* This enables the scroll functionality */
+    border: 1px solid #ccc; /* Optional: Add a border for aesthetics */
+    padding: 10px; /* Optional: Add some padding for better presentation */
+}
+
+/* Optional: Style the individual result items for better visibility */
+.result-item {
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
 /* FIXME: left part covering sidebar */
 #content {
     width: 100%;
@@ -52,5 +67,3 @@ body {
     width: 100%; 
     height: 100%;
 }
-
-
