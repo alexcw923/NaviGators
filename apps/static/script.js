@@ -266,12 +266,27 @@ require([
               })
           });
     }
-
-    function showNearbyPoint(data){
-        for (k in data) { 
-            addPointGraphic("", new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']));
-        }
-    }
+    document.getElementById("getNearbyPlaces").addEventListener("click", function(){
+        console.log("getNearbyPlaces called");
+        const latitude = document.getElementById('latitude').value;
+        const longitude = document.getElementById('longitude').value;
+        const category = document.getElementById('category').value;
+        const search_radius = document.getElementById('search_radius').value;
+        const max_locations = document.getElementById('max_locations').value;
+        fetch(`http://127.0.0.1:8000/search/?latitude=${latitude}&longitude=${longitude}&category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
+          .then(response => response.json())
+          .then(data => {
+              // Handle the JSON data here
+              // For demonstration, display the JSON string in the div with id 'jsonOutput'
+              document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+              for (k in data) { 
+                addPointGraphic("", new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']));
+                }
+              
+          })
+          .catch(error => console.error('Error fetching data:', error));
+      });
+      
     window.showNearbyPoint = showNearbyPoint;
     
 
