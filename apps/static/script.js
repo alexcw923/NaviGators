@@ -276,19 +276,19 @@ require([
         fetch(`http://127.0.0.1:8000/search/?latitude=${latitude}&longitude=${longitude}&category=${category}&search_radius=${search_radius}&max_locations=${max_locations}`)
           .then(response => response.json())
           .then(data => {
-              // Handle the JSON data here
-              // For demonstration, display the JSON string in the div with id 'jsonOutput'
-              document.getElementById('jsonOutput').innerText = JSON.stringify(data);
-              for (k in data) { 
-                addPointGraphic("", new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']));
-                }
+            // Handle the JSON data here
+            // For demonstration, display the JSON string in the div with id 'jsonOutput'
+            document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+            view.graphics.removeAll();
+            for (k in data) { 
+            let point = new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']);
+            addPointGraphic("", point);
+            previousGraphic.push(point);
+            }
               
           })
           .catch(error => console.error('Error fetching data:', error));
-      });
-      
-    window.showNearbyPoint = showNearbyPoint;
-    
+      });    
 
     const form = document.getElementById("myForm");
     form.addEventListener("submit", handleSubmit);
