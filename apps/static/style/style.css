@@ -16,6 +16,10 @@ body {
     padding: 20px;
 }
 
+.userPreferences div:not(:last-child) {
+    margin-bottom: 15px; 
+  }
+
 .mapContainer {
     width: 70%;
     height: 100vh;
