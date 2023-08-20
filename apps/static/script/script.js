@@ -140,47 +140,47 @@ require([
 
       const routePromise = route.solve(routeUrl, routeParams)
       routePromise.then(function(data) {
-                data.routeResults.forEach(function(result) {
-                  result.route.symbol = {
-                    type: "simple-line",
-                    color: [5, 150, 255],
-                    width: 3
-                  };
-                  view.graphics.add(result.route);
-                  view.extent = result.route.geometry.extent
-                });
-                // console.log(data.routeResults)
+        data.routeResults.forEach(function(result) {
+          result.route.symbol = {
+            type: "simple-line",
+            color: [5, 150, 255],
+            width: 3
+          };
+          view.graphics.add(result.route);
+          view.extent = result.route.geometry.extent
+        });
+        // console.log(data.routeResults)
 
-                // Display directions
-                if (data.routeResults.length > 0) {
-                    const directions = document.createElement("ol");
-                    directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
-                    directions.style.marginTop = "0";
-                    directions.style.padding = "15px 15px 15px 30px";
-                    const features = data.routeResults[0].directions.features;
+        // Display directions
+        if (data.routeResults.length > 0) {
+          const directions = document.createElement("ol");
+          directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+          directions.style.marginTop = "0";
+          directions.style.padding = "15px 15px 15px 30px";
+          const features = data.routeResults[0].directions.features;
 
-                    // Show each direction
-                    features.forEach(function(result,i){
-                      const direction = document.createElement("li");
-                      direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
-                      directions.appendChild(direction);
-                    });
+          // Show each direction
+          features.forEach(function(result,i){
+            const direction = document.createElement("li");
+            direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+            directions.appendChild(direction);
+          });
 
-                    view.ui.empty("top-right");
-                    view.ui.add(directions, "top-right");
-                    return features;    // returning the
-                }
-                return new Promise((resolve, reject) => {
-                  try {
-                    resolve(data.routeResults);
-                  } catch (error) {
-                    reject(error);
-                  }
-                });
-              })
-              .catch(function(error){
-                console.log(error);
-              })
+          view.ui.empty("top-right");
+          view.ui.add(directions, "top-right");
+          return features;    // returning the
+        }
+        return new Promise((resolve, reject) => {
+          try {
+            resolve(data.routeResults);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      })
+      .catch(function(error){
+        console.log(error);
+      })
     }
 
     
@@ -204,70 +204,72 @@ require([
       const getRouteResult = getRoute(); // Call the route service
 
       Promise.all([originServiceAreaGraphic, getRouteResult])
-          .then((results) => {
-              results[1].routeResults.forEach(function(result) {
-                      result.route.symbol = {
-                        type: "simple-line",
-                        color: [5, 150, 255],
-                        width: 3
-                      };
-                      view.graphics.add(result.route);
-                      view.extent = result.route.geometry.extent.expand(1.5);
-                  });
-
-              // Display directions
-              if (results[1].routeResults.length > 0) {
-                  const directions = document.createElement("ol");
-                  // const directions = document.getElementById("directions");
-                  directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
-                  directions.style.marginTop = "0";
-                  directions.style.padding = "15px 15px 15px 30px";
-                  const features = results[1].routeResults[0].directions.features;
-
-                  // Show each direction
-                  features.forEach(function(result,i){
-                    const direction = document.createElement("li");
-                    direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
-                    directions.appendChild(direction);
-                  });
-
-                  const uiDiv = document.getElementById("directions")
-                  uiDiv.appendChild(directions);
-              }
-              // const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
-              const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
-              console.log(results[0].serviceAreaPolygons.features[0])
-              console.log(results[1].routeResults)
-              intersection.then((result) => {
-                  console.log(result)
-                  const lineSymbol = {
-                      type: "simple-line",
-                      color: [150, 150, 25],
-                      width: 5
-                  };
-                  const lineAtt = {
-                      Name: "Keystone Pipeline", // The name of the pipeline
-                      Owner: "TransCanada", // The owner of the pipeline
-                      Length: "3,456 km" // The length of the pipeline
-                  };
-                  const polylineGraphic = new Graphic({
-                      geometry: result, // Add the geometry created in step 3
-                      symbol: lineSymbol, // Add the symbol created in step 4
-                      attributes: lineAtt // Add the attributes created in step 5
-                  });
-                  view.graphics.add(polylineGraphic);
-                  if (result != undefined && result.paths.length > 0) {
-                    // addPointGraphic("origin", result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1])
-                    const intersectionPoint = result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1]
-                    addPointGraphic("origin", new Point(intersectionPoint[0], intersectionPoint[1]))
-                  }
-                  // result.p
-                  // view.extent = result.route.geometry.extent.expand(1.5);
-              })
+        .then((results) => {
+          results[1].routeResults.forEach(function(result) {
+            result.route.symbol = {
+              type: "simple-line",
+              color: [5, 150, 255],
+              width: 3
+            };
+            view.graphics.add(result.route);
+            view.extent = result.route.geometry.extent.expand(1.5);
           });
+
+          // Display directions
+          if (results[1].routeResults.length > 0) {
+            const directions = document.createElement("ol");
+            // const directions = document.getElementById("directions");
+            directions.classList = "esri-widget esri-widget--panel esri-directions__scroller";
+            directions.style.marginTop = "0";
+            directions.style.padding = "15px 15px 15px 30px";
+            const features = results[1].routeResults[0].directions.features;
+
+            // Show each direction
+            features.forEach(function(result,i){
+              const direction = document.createElement("li");
+              direction.innerHTML = result.attributes.text + " (" + result.attributes.length.toFixed(2) + " miles)";
+              directions.appendChild(direction);
+            });
+
+            const uiDiv = document.getElementById("directions")
+            uiDiv.appendChild(directions);
+          }
+          // const intersects = geometryEngineAsync.intersects(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+          const intersection = geometryEngineAsync.intersect(results[0].serviceAreaPolygons.features[0].geometry, results[1].routeResults[0].route.geometry)
+          console.log(results[0].serviceAreaPolygons.features[0])
+          console.log(results[1].routeResults)
+          intersection.then((result) => {
+            console.log(result)
+            const lineSymbol = {
+              type: "simple-line",
+              color: [150, 150, 25],
+              width: 5
+            };
+            const lineAtt = {
+              Name: "Keystone Pipeline", // The name of the pipeline
+              Owner: "TransCanada", // The owner of the pipeline
+              Length: "3,456 km" // The length of the pipeline
+            };
+            const polylineGraphic = new Graphic({
+              geometry: result, // Add the geometry created in step 3
+              symbol: lineSymbol, // Add the symbol created in step 4
+              attributes: lineAtt // Add the attributes created in step 5
+            });
+            view.graphics.add(polylineGraphic);
+            if (result != undefined && result.paths.length > 0) {
+              // addPointGraphic("origin", result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1])
+              const intersectionPoint = result.paths[result.paths.length-1][result.paths[result.paths.length-1].length-1]
+              addPointGraphic("origin", new Point(intersectionPoint[0], intersectionPoint[1]))
+            }
+              // result.p
+              // view.extent = result.route.geometry.extent.expand(1.5);
+          })
+        });
     }
-    document.getElementById("getNearbyPlaces").addEventListener("click", function(){
-        console.log("getNearbyPlaces called");
+
+  
+    function getNearbyPlaces()
+    {
         const latitude = document.getElementById('latitude').value;
         const longitude = document.getElementById('longitude').value;
         const category = document.getElementById('category').value;
@@ -278,20 +280,18 @@ require([
           .then(data => {
             // Handle the JSON data here
             // For demonstration, display the JSON string in the div with id 'jsonOutput'
-            document.getElementById('jsonOutput').innerText = JSON.stringify(data);
+            console.log(JSON.stringify(data));
             view.graphics.removeAll();
             for (k in data) { 
-            let point = new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']);
-            addPointGraphic("", point);
-            previousGraphic.push(point);
+              let point = new Point(data[k]['Coordinates']['x'], data[k]['Coordinates']['y']);
+              addPointGraphic("", point);
             }
-              
           })
           .catch(error => console.error('Error fetching data:', error));
-      });    
+    }
 
-    const form = document.getElementById("myForm");
-    form.addEventListener("submit", handleSubmit);
+    document.getElementById("getNearbyPlaces").addEventListener("click", getNearbyPlaces);    
+    document.getElementById("myForm").addEventListener("submit", handleSubmit);
 
   });
 
